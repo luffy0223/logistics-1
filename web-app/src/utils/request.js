@@ -5,7 +5,7 @@ import router from '../router/index'
 const token = localStorage.getItem("token")
 
 const service = request.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: 'http://localhost:28080/api',
     timeout: 50000,
     headers: {'Authorization': token}
 });
