@@ -132,6 +132,40 @@ public class ChatController {
         return result;
     }
 
+    @GetMapping("/randomForestClassifier")
+    public List<PredictionRateVO> getRandomForestClassifier() {
+        List<String> strings = machineLearning.randomForestClassifier();
 
+        List<PredictionRateVO> result = new ArrayList<>();
+
+        // Temporary map to store address-based statistics
+        Map<String, PredictionRateVO> addressMap = new HashMap<>();
+
+        for (String string : strings) {
+            JSONObject jsonObject = JSON.parseObject(string);
+            String address = jsonObject.getString("address");
+            double prediction = jsonObject.getDoubleValue("prediction");
+            double care = jsonObject.getDoubleValue("urgent");
+
+            // Get or create the PredictionRateVO for this address
+            PredictionRateVO vo = addressMap.computeIfAbsent(address, addr -> {
+                PredictionRateVO newVo = new PredictionRateVO();
+                newVo.setAddress(addr);
+                newVo.setCount(0);
+                newVo.setSuccessCount(0);
+                return newVo;
+            });
+
+            // Update counts
+            vo.setCount(vo.getCount() + 1);
+            if (prediction == care) {
+                vo.setSuccessCount(vo.getSuccessCount() + 1);
+            }
+        }
+
+        // Convert map values to list
+        result.addAll(addressMap.values());
+        return result;
+    }
 
 }
