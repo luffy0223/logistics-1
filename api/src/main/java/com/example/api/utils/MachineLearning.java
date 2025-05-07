@@ -183,9 +183,9 @@ public class MachineLearning {
     public Double runNaiveBayes() {
         Dataset<Row> df = loadAndValidate();
         // 将status转换为double标签
-        Dataset<Row> data = df.withColumn("care", df.col("care").cast("double"));
+       // Dataset<Row> data = df.withColumn("urgent", df.col("urgent").cast("double"));
         // 特征索引
-        Dataset<Row>[] splits = data.randomSplit(new double[]{0.9, 0.1}, 1234L);
+        Dataset<Row>[] splits = df.randomSplit(new double[]{0.9, 0.1}, 1234L);
         Dataset<Row> trainingData = splits[0];
         Dataset<Row> testData = splits[1];
 
@@ -207,6 +207,38 @@ public class MachineLearning {
                 .setMetricName("accuracy");
         System.out.println("Naive Bayes Accuracy: " + evaluator.evaluate(nbPredictions));
         return evaluator.evaluate(nbPredictions);
+    }
+
+
+    public List<String> randomForestClassifier(){
+        Dataset<Row> df = loadAndValidate();
+        // 将status转换为double标签
+        // Dataset<Row> data = df.withColumn("urgent", df.col("urgent").cast("double"));
+        // 特征索引
+        Dataset<Row>[] splits = df.randomSplit(new double[]{0.9, 0.1}, 1234L);
+        Dataset<Row> trainingData = splits[0];
+        Dataset<Row> testData = splits[1];
+
+        RandomForestClassifier rf = new RandomForestClassifier()
+                .setLabelCol("urgent")
+                .setFeaturesCol("features")
+                .setNumTrees(20); // 可调节树的数量
+
+// 训练模型
+        // 训练模型
+        RandomForestClassificationModel rfModel = rf.fit(trainingData);
+
+// 预测
+        Dataset<Row> nbPredictions = rfModel.transform(testData);
+        nbPredictions.select("features", "urgent", "prediction").show(10);
+
+// 预测
+        Dataset<Row> rfPredictions = rfModel.transform(testData);
+        rfPredictions.select("features", "urgent", "prediction").show(10);
+        return rfPredictions.select("id", "address","urgent", "prediction")
+                .toJSON().collectAsList();
+
+
     }
 
 }
