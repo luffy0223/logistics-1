@@ -37,4 +37,16 @@ public class MLController {
     public List<String> clusterData() {
         return machineLearning.runKMeans();
     }
+
+    @GetMapping("/naiveBayes")
+    public Double runNaiveBayes(){
+        return machineLearning.runNaiveBayes();
+    }
+
+    @GetMapping("/randomForestClassifier")
+    public List<String> randomForestClassifier(){
+        return machineLearning.randomForestClassifier();
+    }
+
+
 }
