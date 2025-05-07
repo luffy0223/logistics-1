@@ -1,10 +1,10 @@
 package com.example.api.controller;
 
-import com.example.api.model.entity.CareCount;
-import com.example.api.model.entity.Distribution;
-import com.example.api.model.entity.DistributionBarVO;
-import com.example.api.model.entity.DistributionChatVO;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.example.api.model.entity.*;
 import com.example.api.repository.DistributionRepository;
+import com.example.api.utils.MachineLearning;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,11 +17,14 @@ import java.util.stream.Collectors;
  *
  */
 @RestController
-@RequestMapping("/api/eChat")
+    @RequestMapping("/api/eChat")
 public class ChatController {
 
     @Resource
     private DistributionRepository distributionRepository;
+
+    @Resource
+    private MachineLearning machineLearning;
 
     @GetMapping("/distribution")
     public List<DistributionChatVO> getDistribution(String address) {
@@ -94,6 +97,40 @@ public class ChatController {
         return result;
     }
 
+    @GetMapping("/mlPredictionRate")
+    public List<PredictionRateVO> getMlPredictionRate() {
+        List<String> strings = machineLearning.runDecisionTree();
+        List<PredictionRateVO> result = new ArrayList<>();
+
+        // Temporary map to store address-based statistics
+        Map<String, PredictionRateVO> addressMap = new HashMap<>();
+
+        for (String string : strings) {
+            JSONObject jsonObject = JSON.parseObject(string);
+            String address = jsonObject.getString("address");
+            double prediction = jsonObject.getDoubleValue("prediction");
+            double care = jsonObject.getDoubleValue("care");
+
+            // Get or create the PredictionRateVO for this address
+            PredictionRateVO vo = addressMap.computeIfAbsent(address, addr -> {
+                PredictionRateVO newVo = new PredictionRateVO();
+                newVo.setAddress(addr);
+                newVo.setCount(0);
+                newVo.setSuccessCount(0);
+                return newVo;
+            });
+
+            // Update counts
+            vo.setCount(vo.getCount() + 1);
+            if (prediction == care) {
+                vo.setSuccessCount(vo.getSuccessCount() + 1);
+            }
+        }
+
+        // Convert map values to list
+        result.addAll(addressMap.values());
+        return result;
+    }
 
 
 }
